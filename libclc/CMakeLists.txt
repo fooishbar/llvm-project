@@ -75,6 +75,11 @@ execute_process( COMMAND ${LLVM_CONFIG} "--bindir"
 	OUTPUT_VARIABLE LLVM_BINDIR
 	OUTPUT_STRIP_TRAILING_WHITESPACE )
 
+if (WIN32)
+	string(REPLACE ".lib " ".lib;" LLVM_SYSTEM_LIBS "${LLVM_SYSTEM_LIBS}")
+	string(REPLACE ".lib " ".lib;" LLVM_LIBS "${LLVM_LIBS}")
+endif()
+
 # These were not properly reported in early LLVM and we don't need them
 set( LLVM_CXX_FLAGS ${LLVM_CXX_FLAGS} -fno-rtti -fno-exceptions )
 
@@ -102,6 +107,12 @@ if( NOT LLVM_CLANG OR NOT LLVM_OPT OR NOT LLVM_AS OR NOT LLVM_LINK )
 	message( FATAL_ERROR "toolchain incomplete!" )
 endif()
 
+if(WIN32)
+	set( LLVM_STATIC_FLAGS "/MT" )
+else()
+	set( LLVM_STATIC_FLAGS "" )
+endif()
+
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 set( CMAKE_CLC_COMPILER ${LLVM_CLANG} )
 set( CMAKE_CLC_ARCHIVE ${LLVM_LINK} )
@@ -121,7 +132,7 @@ link_directories( ${LLVM_LIBDIR} )
 
 # Setup prepare_builtins tools
 add_executable( prepare_builtins utils/prepare-builtins.cpp )
-target_compile_options( prepare_builtins PRIVATE ${LLVM_CXX_FLAGS} )
+target_compile_options( prepare_builtins PRIVATE ${LLVM_CXX_FLAGS} ${LLVM_STATIC_FLAGS} )
 target_compile_definitions( prepare_builtins PRIVATE ${LLVM_VERSION_DEFINE} )
 target_link_libraries( prepare_builtins PRIVATE ${LLVM_SYSTEM_LIBS} )
 target_link_libraries( prepare_builtins PRIVATE ${LLVM_LIBS} )
